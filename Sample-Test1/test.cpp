@@ -1,6 +1,6 @@
 ﻿#include "pch.h"
 #include "../Restaurant/BookingScheduler.cpp"
-
+#include "TestableSmsSender.cpp"
 
 class BookingItem : public testing::Test
 {
@@ -9,6 +9,7 @@ protected:
 	{
 		NOT_ON_THE_HOUR = getTime(2024, 5, 20, 9, 5);
 		ON_THE_HOUR = getTime(2024, 5, 20, 9, 0);
+		bookingScheduler.setSmsSender(&testableSmsSender);
 	}
 public:
 	tm getTime(int year,int mon, int day, int hour, int min)
@@ -29,7 +30,7 @@ public:
 	const int UNDER_CAPACITY = 1;
 	const int CAPACITY_PER_HOUR= 3;
 	BookingScheduler bookingScheduler{ CAPACITY_PER_HOUR };
-
+	TestableSmsSender testableSmsSender;
 };
 
 
@@ -73,6 +74,14 @@ TEST_F(BookingItem, 시간대별_인원제한_다른시간) {
 	Schedule* newSchedule = new Schedule{ diffHour,UNDER_CAPACITY,CUSTOMER };
 	bookingScheduler.addSchedule(newSchedule);
 
-	//EXPECT_EQ(true, bookingScheduler.hasSchedule(schedule));
+	EXPECT_EQ(true, bookingScheduler.hasSchedule(schedule));
 	EXPECT_EQ(true, bookingScheduler.hasSchedule(newSchedule));
+}
+
+TEST_F(BookingItem, 예약완료시_SMS는_무조건_발송) {
+	Schedule* schedule = new Schedule{ ON_THE_HOUR, CAPACITY_PER_HOUR, CUSTOMER };
+
+	bookingScheduler.addSchedule(schedule);
+
+	EXPECT_EQ(true, testableSmsSender.isSendMethodIsCalled());
 }
