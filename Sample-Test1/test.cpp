@@ -1,6 +1,7 @@
 ﻿#include "pch.h"
 #include "../Restaurant/BookingScheduler.cpp"
 #include "TestableSmsSender.cpp"
+#include "TestableMailSender.cpp"
 
 class BookingItem : public testing::Test
 {
@@ -10,6 +11,7 @@ protected:
 		NOT_ON_THE_HOUR = getTime(2024, 5, 20, 9, 5);
 		ON_THE_HOUR = getTime(2024, 5, 20, 9, 0);
 		bookingScheduler.setSmsSender(&testableSmsSender);
+		bookingScheduler.setMailSender(&testableMailSender);
 	}
 public:
 	tm getTime(int year,int mon, int day, int hour, int min)
@@ -27,10 +29,12 @@ public:
 	tm NOT_ON_THE_HOUR;
 	tm ON_THE_HOUR;
 	Customer CUSTOMER{ "fake name", "010-1234-5678" };
+	Customer CUSTOMER_WITH_MAIL{ "fake name", "010-1234-5678","test@test.com" };
 	const int UNDER_CAPACITY = 1;
 	const int CAPACITY_PER_HOUR= 3;
 	BookingScheduler bookingScheduler{ CAPACITY_PER_HOUR };
 	TestableSmsSender testableSmsSender;
+	TestableMailSender testableMailSender;
 };
 
 
@@ -84,4 +88,20 @@ TEST_F(BookingItem, 예약완료시_SMS는_무조건_발송) {
 	bookingScheduler.addSchedule(schedule);
 
 	EXPECT_EQ(true, testableSmsSender.isSendMethodIsCalled());
+}
+
+TEST_F(BookingItem, 이메일이_없는_경우_메일_미발송) {
+	Schedule* schedule = new Schedule{ ON_THE_HOUR, CAPACITY_PER_HOUR, CUSTOMER };
+
+	bookingScheduler.addSchedule(schedule);
+
+	EXPECT_EQ(0, testableMailSender.getCountSendMailMethodIsCalled());
+}
+
+TEST_F(BookingItem, 이메일이_있는_경우_메일_발송) {
+	Schedule* schedule = new Schedule{ ON_THE_HOUR, CAPACITY_PER_HOUR, CUSTOMER_WITH_MAIL };
+
+	bookingScheduler.addSchedule(schedule);
+
+	EXPECT_EQ(1, testableMailSender.getCountSendMailMethodIsCalled());
 }
