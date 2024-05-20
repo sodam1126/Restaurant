@@ -2,6 +2,8 @@
 #include "../Restaurant/BookingScheduler.cpp"
 #include "TestableSmsSender.cpp"
 #include "TestableMailSender.cpp"
+#include "SundayBookingScheduler.cpp"
+#include "MondayBookingScheduler.cpp"
 
 class BookingItem : public testing::Test
 {
@@ -101,7 +103,35 @@ TEST_F(BookingItem, 이메일이_없는_경우_메일_미발송) {
 TEST_F(BookingItem, 이메일이_있는_경우_메일_발송) {
 	Schedule* schedule = new Schedule{ ON_THE_HOUR, CAPACITY_PER_HOUR, CUSTOMER_WITH_MAIL };
 
+	
 	bookingScheduler.addSchedule(schedule);
+		
+	EXPECT_EQ(1,testableMailSender.getCountSendMailMethodIsCalled());
+	
 
-	EXPECT_EQ(1, testableMailSender.getCountSendMailMethodIsCalled());
+}
+
+TEST_F(BookingItem, 일요일에는_예약불가_예외처리) {
+	BookingScheduler* booking = new SundayBookingScheduler{ CAPACITY_PER_HOUR };
+;	Schedule* schedule = new Schedule{ ON_THE_HOUR, CAPACITY_PER_HOUR, CUSTOMER_WITH_MAIL };
+	try
+	{
+		booking->addSchedule(schedule);
+		FAIL();
+	}
+	catch (std::runtime_error& e)
+	{
+		EXPECT_EQ(string{ e.what() }, string{ "Booking system is not available on sunday" });
+	}
+}
+
+TEST_F(BookingItem, 월요일에는_예약가능) {
+	BookingScheduler* booking = new MondayBookingScheduler{ CAPACITY_PER_HOUR };
+	Schedule* schedule = new Schedule{ ON_THE_HOUR, CAPACITY_PER_HOUR, CUSTOMER_WITH_MAIL };
+	
+	booking->addSchedule(schedule);
+		
+	
+	EXPECT_EQ(true,booking->hasSchedule(schedule));
+	
 }

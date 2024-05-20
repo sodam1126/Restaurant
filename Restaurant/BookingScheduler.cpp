@@ -16,6 +16,14 @@ public:
         mailSender = new MailSender();
     }
 
+    virtual tm getNow()
+    {
+        tm tm;
+        time_t tt = time(nullptr);
+        localtime_s(&tm, &tt);
+        return tm;
+    }
+
     void addSchedule(Schedule* schedule) {
 
         // 정각에 예약하지 않을 경우 RuntimeException 발생
@@ -34,13 +42,13 @@ public:
             throw std::runtime_error("Number of people is over restaurant capacity per hour");
         }
 
-        /*
+        
         // 일요일에는 시스템을 오픈하지 않는다.
-        time_t now = time(nullptr);
-        if (getDayOfWeek(now) == "Sunday") {
+        tm now = getNow();
+        if (getDayOfWeek(now) == "SUN") {
             throw std::runtime_error("Booking system is not available on sunday");
         }
-        */
+        
 
         schedules.push_back(schedule);
 
@@ -78,12 +86,10 @@ private:
     }
 
     //요일을 알려주는 함수
-    string getDayOfWeek(time_t tm_t) {
-        tm tmTime;
-        localtime_s(&tmTime, &tm_t);
-        char buffer[100] = { 0 };
-        std::strftime(buffer, sizeof(buffer), "%A", &tmTime);
-        return string{ buffer };
+    string getDayOfWeek(tm tmTime) {
+        string weekday[7] = { "SUN","MON","TUE","WED","THU","FRI","SAT" };
+      return weekday[tmTime.tm_wday];
+        //return string{ buffer };
     }
 
     int capacityPerHour;
